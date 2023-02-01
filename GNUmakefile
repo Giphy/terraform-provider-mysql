@@ -8,13 +8,6 @@ TEST_USER=root
 TEST_PASSWORD=my-secret-pw
 
 
-#For mysql_rds_config acctest
-#need below env variables set
-#RDS_PASSWORD
-#RDS_USERNAME
-#RDS_HOST
-#RDS_PORT
-
 default: build
 
 build: fmtcheck
@@ -58,12 +51,12 @@ testpercona:
 	docker rm -f test-percona$(MYSQL_VERSION)
 
 testrdsdb%:
-	$(MAKE) MYSQL_VERSION=$* testrdsdb
+	$(MAKE) MYSQL_VERSION=$* MYSQL_USERNAME=${MYSQL_USERNAME} MYSQL_HOST=$(shell echo ${MYSQL_ENDPOINT} | cut -d: -f1) MYSQL_PASSWORD=${MYSQL_PASSWORD} MYSQL_PORT=$(shell echo ${MYSQL_ENDPOINT} | cut -d: -f2) testrdsdb
 
 testrdsdb:
 	@echo 'Waiting for AMAZON RDS...'
-	@while ! mysql -h $(RDS_HOST) -P $(RDS_PORT) -u $(RDS_USERNAME) -p"$(RDS_PASSWORD)" -e 'SELECT 1' >/dev/null 2>&1; do printf '.'; sleep 1; done ; echo ; echo "Connected!"
-	MYSQL_USERNAME="$(RDS_USERNAME)" MYSQL_PASSWORD=$(RDS_PASSWORD) MYSQL_ENDPOINT=$(RDS_HOST):$(RDS_PORT) $(MAKE) testacc
+	@while ! mysql -h "$(MYSQL_HOST)" -P "$(MYSQL_PORT)" -u "$(MYSQL_USERNAME)" -p"$(MYSQL_PASSWORD)" -e 'SELECT 1' >/dev/null 2>&1; do printf '.'; sleep 1; done ; echo ; echo "Connected!"
+	$(MAKE) testacc
 
 testtidb%:
 	$(MAKE) MYSQL_VERSION=$* MYSQL_PORT=34$(shell echo "$*" | tr -d '.') testtidb
